@@ -1,7 +1,7 @@
 import { io } from 'socket.io-client';
 
 // Use same host or fallback to port 3001 in dev
-const SOCKET_URL = import.meta.env.VISIT_SERVER_URL || 'http:/localhost:3001'; 
+const SOCKET_URL = import.meta.env.VISI_SERVER_URL || 'http:/localhost:3001'; 
 
 export const socket = io(SOCKET_URL, {
   autoConnect: true,
