@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Copy, Check, LogOut, Play, Share2 } from 'lucide-react';
 import { socket } from '../socket';
 import { useSocket } from '../hooks/useSocket';
@@ -16,10 +16,20 @@ import WordSelectModal from '../components/WordSelectModal';
 import PodiumModal from '../components/PodiumModal';
 
 export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
+  // Background music setup
+  const bgMusicRef = useRef(null);
+  // Initialize audio once
+  if (!bgMusicRef.current) {
+    const audio = new Audio('/music/background.mp3');
+    audio.loop = true;
+    audio.volume = 0.5;
+    bgMusicRef.current = audio;
+  }
   const [room, setRoom] = useState(initialRoom);
   const [myPlayer, setMyPlayer] = useState(initialPlayer);
   const [messages, setMessages] = useState([]);
   const [closeHint, setCloseHint] = useState(null);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
 
   // Drawer specific state
   const [wordChoices, setWordChoices] = useState([]);
@@ -84,6 +94,8 @@ export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
   // Listen to round start
   useSocket(EVENTS.ROUND_START, () => {
     setWordChoices([]);
+    // Start music when round starts if not already playing
+    bgMusicRef.current?.play();
   });
 
   // Listen to word selected by drawer
@@ -94,6 +106,10 @@ export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
   // Handle drawer selecting word
   const handleSelectWord = (word) => {
     socket.emit(EVENTS.WORD_SELECTED, { word });
+    // Play background music when game starts (first round)
+    if (room.gameState === 'LOBBY') {
+      bgMusicRef.current?.play();
+    }
     setWordChoices([]);
   };
 
@@ -121,10 +137,20 @@ export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
 
   const handleLeaveRoom = () => {
     socket.emit(EVENTS.LEAVE_ROOM);
+    // Stop music on leaving room
+    bgMusicRef.current?.pause();
+    bgMusicRef.current.currentTime = 0;
     onLeave();
   };
 
   const currentDrawerObj = room.players.find(p => p.id === room.drawerId);
+
+  // Cleanup music on component unmount
+  useEffect(() => {
+    return () => {
+      bgMusicRef.current?.pause();
+    };
+  }, []);
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: '16px 24px' }}>
