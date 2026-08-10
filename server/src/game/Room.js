@@ -124,7 +124,7 @@ class Room {
 
   updateSettings(settings) {
     if (this.gameState !== GAME_STATES.LOBBY) return;
-    if (settings.maxPlayers) this.maxPlayers = Math.min(Math.max(settings.maxPlayers, 2), 16);
+    if (settings.maxPlayers) this.maxPlayers = Math.min(Math.max(settings.maxPlayers, 2), 30);
     if (settings.roundTime) this.roundTime = Math.min(Math.max(settings.roundTime, 30), 180);
     if (settings.totalRounds) this.totalRounds = Math.min(Math.max(settings.totalRounds, 1), 10);
     this.broadcastRoomUpdate();
@@ -300,7 +300,27 @@ class Room {
       player.hasGuessed = true;
       player.guessTime = Date.now();
 
-      // Calculate speed-based score
+      // Only the first correct guesser gets points
+      const anyoneElseGuessed = Array.from(this.players.values()).some(
+        p => p.id !== player.id && !p.isDrawer && p.hasGuessed
+      );
+
+      if (anyoneElseGuessed) {
+        // Someone already guessed first — no points, treat as correct but no reward
+        this.broadcastRoomUpdate();
+        if (this.io) {
+          this.io.to(this.code).emit(EVENTS.GUESS_RESULT, {
+            playerId: player.id,
+            playerName: player.name,
+            correct: true,
+            points: 0
+          });
+        }
+        this.checkAllGuessed();
+        return { isGuess: true, correct: true, points: 0 };
+      }
+
+      // First correct guesser — award points
       const timeFraction = this.timeLeft / this.roundTime;
       const points = Math.round(MIN_GUESS_POINTS + (MAX_GUESS_POINTS - MIN_GUESS_POINTS) * timeFraction);
       player.addScore(points);
@@ -322,7 +342,9 @@ class Room {
         });
       }
 
-      this.checkAllGuessed();
+      // End the round immediately — first guesser wins
+      this.broadcastSystemMessage(`${player.name} guessed it first! 🎉`);
+      this.endRound(`${player.name} guessed first!`);
       return { isGuess: true, correct: true, points };
     }
 

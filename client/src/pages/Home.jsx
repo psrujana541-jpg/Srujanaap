@@ -233,6 +233,10 @@ export default function Home({ onJoinedRoom }) {
                   <option value={6}>6 Players</option>
                   <option value={8}>8 Players</option>
                   <option value={12}>12 Players</option>
+                  <option value={16}>16 Players</option>
+                  <option value={20}>20 Players</option>
+                  <option value={25}>25 Players</option>
+                  <option value={30}>30 Players</option>
                 </select>
               </div>
 
