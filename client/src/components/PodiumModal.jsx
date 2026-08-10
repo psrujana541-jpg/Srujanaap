@@ -30,9 +30,10 @@ export default function PodiumModal({ scores = [], isHost, onPlayAgain }) {
     frame();
   }, []);
 
-  const winner = scores[0];
-  const second = scores[1];
-  const third = scores[2];
+  const sorted = [...scores].sort((a, b) => b.score - a.score);
+  const winner = sorted[0];
+  const second = sorted[1];
+  const third = sorted[2];
 
   return (
     <div
