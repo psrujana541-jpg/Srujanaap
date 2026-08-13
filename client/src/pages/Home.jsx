@@ -218,7 +218,7 @@ export default function Home({ onJoinedRoom }) {
         {/* Mode Forms */}
         {mode === 'create' ? (
           <form onSubmit={handleCreateRoom}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '24px' }}>
+            <div className="settings-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '24px' }}>
               <div>
                 <label style={{ fontSize: '0.75rem', color: 'var(--text-dim)', display: 'block', marginBottom: '4px' }}>
                   PLAYERS

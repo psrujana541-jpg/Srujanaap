@@ -51,14 +51,20 @@ export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
     tool,
     setTool,
     getNormalizedPos,
+    getCanvasPos,
     drawStroke,
     clearCanvas,
     fillCanvas,
+    floodFill,
     syncHistory
   } = useCanvas();
 
   const isHost = room.hostId === myPlayer.id;
   const isDrawer = room.drawerId === myPlayer.id;
+
+  // Mobile tab state
+  const [activeTab, setActiveTab] = useState('canvas'); // 'canvas' | 'chat' | 'players'
+  const [unreadChat, setUnreadChat] = useState(0);
 
   // Listen to room updates
   useSocket(EVENTS.ROOM_UPDATE, (updatedRoom) => {
@@ -78,7 +84,15 @@ export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
   // Listen to chat messages
   useSocket(EVENTS.CHAT_MESSAGE, (msg) => {
     setMessages(prev => [...prev, msg]);
+    setUnreadChat(prev => (activeTab !== 'chat' ? prev + 1 : 0));
   });
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    if (tab === 'chat') {
+      setUnreadChat(0);
+    }
+  };
 
   // Listen to close guess hints
   useSocket(EVENTS.CLOSE_GUESS_HINT, ({ message }) => {
@@ -95,7 +109,7 @@ export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
   useSocket(EVENTS.ROUND_START, () => {
     setWordChoices([]);
     // Start music when round starts if not already playing
-    bgMusicRef.current?.play();
+    bgMusicRef.current?.play().catch(() => {});
   });
 
   // Listen to word selected by drawer
@@ -108,7 +122,7 @@ export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
     socket.emit(EVENTS.WORD_SELECTED, { word });
     // Play background music when game starts (first round)
     if (room.gameState === 'LOBBY') {
-      bgMusicRef.current?.play();
+      bgMusicRef.current?.play().catch(() => {});
     }
     setWordChoices([]);
   };
@@ -139,7 +153,7 @@ export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
     socket.emit(EVENTS.LEAVE_ROOM);
     // Stop music on leaving room
     bgMusicRef.current?.pause();
-    bgMusicRef.current.currentTime = 0;
+    if (bgMusicRef.current) bgMusicRef.current.currentTime = 0;
     onLeave();
   };
 
@@ -153,20 +167,11 @@ export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
   }, []);
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: '16px 24px' }}>
+    <div className="game-container" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: '12px 16px' }}>
       {/* Game Header */}
-      <header
-        className="glass-card"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '12px 20px',
-          marginBottom: '16px'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <header className="glass-card game-header">
+        <div className="game-header-left">
+          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span>✏️ Drawlulu</span>
           </div>
 
@@ -184,7 +189,7 @@ export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
         </div>
 
         {/* Word / Round Info */}
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+        <div className="game-header-center">
           {room.gameState !== 'LOBBY' && (
             <WordDisplay 
               maskedWord={room.maskedWord} 
@@ -194,10 +199,10 @@ export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
           )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div className="game-header-right">
           {/* Round Counter */}
           {room.gameState !== 'LOBBY' && (
-            <div style={{ textAlign: 'right', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+            <div style={{ textAlign: 'right', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               ROUND <span style={{ fontWeight: 700, color: 'white' }}>{room.currentRound}</span> / {room.totalRounds}
             </div>
           )}
@@ -212,34 +217,55 @@ export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
             type="button"
             onClick={handleLeaveRoom}
             className="btn-secondary"
-            style={{ padding: '8px 12px', color: '#ef4444' }}
+            style={{ padding: '6px 10px', color: '#ef4444', fontSize: '0.85rem' }}
             title="Leave Game"
           >
-            <LogOut size={16} /> Exit
+            <LogOut size={16} /> <span className="hide-mobile">Exit</span>
           </button>
         </div>
       </header>
 
+      {/* Mobile Navigation Tab Bar (visible only on mobile <= 768px) */}
+      <div className="mobile-tab-bar">
+        <button
+          type="button"
+          className={activeTab === 'canvas' ? 'active' : ''}
+          onClick={() => handleTabChange('canvas')}
+        >
+          🎨 Canvas
+        </button>
+        <button
+          type="button"
+          className={activeTab === 'chat' ? 'active' : ''}
+          onClick={() => handleTabChange('chat')}
+          style={{ position: 'relative' }}
+        >
+          💬 Chat
+          {unreadChat > 0 && activeTab !== 'chat' && (
+            <span className="unread-badge">{unreadChat}</span>
+          )}
+        </button>
+        <button
+          type="button"
+          className={activeTab === 'players' ? 'active' : ''}
+          onClick={() => handleTabChange('players')}
+        >
+          👥 Players ({room.players.length})
+        </button>
+      </div>
+
       {/* Main Gameplay Layout */}
-      <div 
-        style={{ 
-          flex: 1, 
-          display: 'grid', 
-          gridTemplateColumns: '260px 1fr 300px', 
-          gap: '16px',
-          alignItems: 'start'
-        }}
-      >
-        {/* Left Column: Scoreboard */}
-        <div className="glass-card" style={{ padding: '16px', maxHeight: 'calc(100vh - 120px)', overflowY: 'auto' }}>
+      <div className="game-layout">
+        {/* Scoreboard Column */}
+        <div className={`glass-card players-panel ${activeTab !== 'players' ? 'mobile-hidden' : ''}`} style={{ padding: '16px', overflowY: 'auto' }}>
           <h3 style={{ fontSize: '1rem', color: 'var(--text-muted)', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span>PLAYERS ({room.players.length}/{room.maxPlayers})</span>
           </h3>
           <PlayerList players={room.players} drawerId={room.drawerId} myId={myPlayer.id} />
         </div>
 
-        {/* Middle Column: Canvas & Drawer Controls */}
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {/* Canvas & Drawer Controls Column */}
+        <div className={`canvas-panel ${activeTab !== 'canvas' ? 'mobile-hidden' : ''}`} style={{ display: 'flex', flexDirection: 'column' }}>
           <Canvas
             canvasRef={canvasRef}
             isDrawer={isDrawer}
@@ -249,9 +275,11 @@ export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
             brushSize={brushSize}
             tool={tool}
             getNormalizedPos={getNormalizedPos}
+            getCanvasPos={getCanvasPos}
             drawStroke={drawStroke}
             clearCanvas={clearCanvas}
             fillCanvas={fillCanvas}
+            floodFill={floodFill}
             syncHistory={syncHistory}
           />
 
@@ -267,16 +295,12 @@ export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
               clearCanvas();
               socket.emit(EVENTS.CLEAR_CANVAS);
             }}
-            onFill={(fillColor) => {
-              fillCanvas(fillColor);
-              socket.emit(EVENTS.FILL_CANVAS, { color: fillColor });
-            }}
             disabled={!isDrawer || room.gameState !== 'DRAWING'}
           />
         </div>
 
-        {/* Right Column: Chat & Guesses */}
-        <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', height: '620px' }}>
+        {/* Chat & Guesses Column */}
+        <div className={`glass-card chat-panel ${activeTab !== 'chat' ? 'mobile-hidden' : ''}`}>
           <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--card-border)', fontWeight: 700, fontSize: '0.95rem' }}>
             Chat & Guesses
           </div>

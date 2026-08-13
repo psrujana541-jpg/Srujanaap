@@ -1,5 +1,5 @@
 import React from 'react';
-import { Paintbrush, Eraser, PaintBucket, Trash2, Undo } from 'lucide-react';
+import { Paintbrush, Eraser, PaintBucket, Trash2 } from 'lucide-react';
 
 const PRESET_COLORS = [
   '#000000', '#ffffff', '#64748b', '#ef4444', 
@@ -23,21 +23,20 @@ export default function Toolbar({
   tool,
   setTool,
   onClear,
-  onFill,
   disabled
 }) {
   if (disabled) return null;
 
   return (
     <div
-      className="glass-card"
+      className="toolbar glass-card"
       style={{
         display: 'flex',
         flexWrap: 'wrap',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '10px 16px',
-        gap: '14px',
+        gap: '12px',
         marginTop: '10px'
       }}
     >
@@ -45,54 +44,60 @@ export default function Toolbar({
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <button
           type="button"
+          id="tool-brush"
           onClick={() => setTool('brush')}
-          className={tool === 'brush' ? 'btn-primary' : 'btn-secondary'}
-          style={{ padding: '8px 12px', fontSize: '0.85rem' }}
+          className={tool === 'brush' ? 'btn-primary tool-btn' : 'btn-secondary tool-btn'}
           title="Brush Tool"
+          aria-label="Brush"
         >
-          <Paintbrush size={16} /> Brush
+          <Paintbrush size={16} />
+          <span className="tool-label">Brush</span>
         </button>
         <button
           type="button"
+          id="tool-eraser"
           onClick={() => setTool('eraser')}
-          className={tool === 'eraser' ? 'btn-primary' : 'btn-secondary'}
-          style={{ padding: '8px 12px', fontSize: '0.85rem' }}
+          className={tool === 'eraser' ? 'btn-primary tool-btn' : 'btn-secondary tool-btn'}
           title="Eraser Tool"
+          aria-label="Eraser"
         >
-          <Eraser size={16} /> Eraser
+          <Eraser size={16} />
+          <span className="tool-label">Eraser</span>
         </button>
         <button
           type="button"
-          onClick={() => {
-            setTool('fill');
-            onFill(color);
-          }}
-          className={tool === 'fill' ? 'btn-primary' : 'btn-secondary'}
-          style={{ padding: '8px 12px', fontSize: '0.85rem' }}
-          title="Fill Canvas"
+          id="tool-fill"
+          onClick={() => setTool('fill')}
+          className={tool === 'fill' ? 'btn-primary tool-btn' : 'btn-secondary tool-btn'}
+          title="Fill Tool — click an area on the canvas to flood-fill it"
+          aria-label="Fill"
         >
-          <PaintBucket size={16} /> Fill
+          <PaintBucket size={16} />
+          <span className="tool-label">Fill</span>
         </button>
       </div>
 
       {/* Brush Size Selector */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(15,23,42,0.5)', padding: '4px 8px', borderRadius: 'var(--radius-md)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(15,23,42,0.5)', padding: '4px 8px', borderRadius: 'var(--radius-md)', touchAction: 'manipulation' }}>
         {BRUSH_SIZES.map((b) => (
           <button
             key={b.size}
             type="button"
             onClick={() => setBrushSize(b.size)}
+            aria-label={`Brush size ${b.label}`}
             style={{
-              width: '28px',
-              height: '28px',
+              width: '40px',
+              height: '40px',
               borderRadius: '50%',
               background: brushSize === b.size ? 'var(--accent-indigo)' : 'transparent',
               color: 'white',
-              fontSize: '0.75rem',
+              fontSize: '0.85rem',
               fontWeight: 'bold',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              minWidth: '40px',
+              minHeight: '40px'
             }}
           >
             {b.label}
@@ -101,7 +106,7 @@ export default function Toolbar({
       </div>
 
       {/* Color Palette */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap', maxWidth: '240px' }}>
+      <div className="color-palette" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', maxWidth: '280px', touchAction: 'manipulation' }}>
         {PRESET_COLORS.map((c) => (
           <button
             key={c}
@@ -110,14 +115,15 @@ export default function Toolbar({
               setColor(c);
               if (tool === 'eraser') setTool('brush');
             }}
+            aria-label={`Color ${c}`}
+            className="color-swatch"
             style={{
-              width: '20px',
-              height: '20px',
-              borderRadius: '4px',
               backgroundColor: c,
               border: color === c ? '2px solid white' : '1px solid rgba(0,0,0,0.3)',
               transform: color === c ? 'scale(1.2)' : 'scale(1)',
-              transition: 'transform 0.1s'
+              transition: 'transform 0.1s',
+              outline: color === c ? '2px solid var(--accent-indigo)' : 'none',
+              outlineOffset: '1px'
             }}
           />
         ))}
@@ -129,15 +135,9 @@ export default function Toolbar({
             setColor(e.target.value);
             if (tool === 'eraser') setTool('brush');
           }}
-          style={{
-            width: '24px',
-            height: '24px',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            background: 'transparent'
-          }}
+          className="color-picker-input"
           title="Custom Color"
+          aria-label="Custom color picker"
         />
       </div>
 
@@ -145,12 +145,15 @@ export default function Toolbar({
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <button
           type="button"
+          id="btn-clear"
           onClick={onClear}
-          className="btn-secondary"
-          style={{ padding: '8px 12px', fontSize: '0.85rem', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+          className="btn-secondary tool-btn"
+          style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
           title="Clear Canvas"
+          aria-label="Clear canvas"
         >
-          <Trash2 size={16} /> Clear
+          <Trash2 size={16} />
+          <span className="tool-label">Clear</span>
         </button>
       </div>
     </div>

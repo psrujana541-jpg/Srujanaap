@@ -12,12 +12,18 @@ export default function Canvas({
   brushSize,
   tool,
   getNormalizedPos,
+  getCanvasPos,
   drawStroke,
   clearCanvas,
-  fillCanvas,
-  syncHistory
+  floodFill,
+  syncHistory,
+  // Team mode props
+  teamMode,
+  myTeam,
+  drawerTeam,
+  currentPhase,
 }) {
-  const isMouseDownRef = useRef(false);
+  const isPointerDownRef = useRef(false);
   const lastNormPosRef = useRef(null);
 
   // Initialize white canvas background & sync resize
@@ -53,20 +59,67 @@ export default function Canvas({
     clearCanvas();
   });
 
-  // Listen to remote fill events
-  useSocket(EVENTS.FILL_CANVAS, ({ color: fillColor }) => {
-    fillCanvas(fillColor);
+  // Listen to remote fill events — runs the same flood-fill on each client
+  useSocket(EVENTS.FILL_CANVAS, ({ x, y, color: fillColor }) => {
+    if (!isDrawer) {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      // x, y are normalized (0-1); convert to canvas pixels with safety fallback
+      const px = (x !== undefined && !isNaN(x)) ? x * canvas.width : canvas.width / 2;
+      const py = (y !== undefined && !isNaN(y)) ? y * canvas.height : canvas.height / 2;
+      floodFill(px, py, fillColor);
+    }
   });
 
+  // Listen to phase change in team mode — load canvas snapshot for opposing team
+  useSocket(EVENTS.PHASE_CHANGE, ({ phase, canvasSnapshot }) => {
+    if (phase === 2 && canvasSnapshot) {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      };
+      img.src = canvasSnapshot;
+    }
+  });
+
+  // Determine if the current user can draw right now
+  const canDraw = isDrawer && gameState === 'DRAWING' && (
+    !teamMode || currentPhase === 1
+  );
+
   const handlePointerDown = (e) => {
-    if (!isDrawer || gameState !== 'DRAWING' || tool === 'fill') return;
-    isMouseDownRef.current = true;
+    e.preventDefault();
+    if (!canDraw) return;
+
+    // Capture pointer so move events continue even if cursor leaves canvas
+    try {
+      e.target.setPointerCapture(e.pointerId);
+    } catch (err) {
+      // Ignore if browser doesn't support pointer capture on specific touch
+    }
+    isPointerDownRef.current = true;
+
     const normPos = getNormalizedPos(e);
-    lastNormPosRef.current = normPos;
+
+    if (tool === 'fill') {
+      // Flood-fill at clicked position
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const pixelPos = getCanvasPos(normPos);
+      floodFill(pixelPos.x, pixelPos.y, color);
+      // Broadcast fill action to server
+      socket.emit(EVENTS.FILL_CANVAS, { x: normPos.x, y: normPos.y, color });
+    } else {
+      lastNormPosRef.current = normPos;
+    }
   };
 
   const handlePointerMove = (e) => {
-    if (!isDrawer || !isMouseDownRef.current || gameState !== 'DRAWING' || tool === 'fill') return;
+    e.preventDefault();
+    if (!canDraw || !isPointerDownRef.current || tool === 'fill') return;
 
     const currentNormPos = getNormalizedPos(e);
     if (!lastNormPosRef.current) {
@@ -92,16 +145,31 @@ export default function Canvas({
     lastNormPosRef.current = currentNormPos;
   };
 
-  const handlePointerUp = () => {
-    isMouseDownRef.current = false;
+  const handlePointerUp = (e) => {
+    isPointerDownRef.current = false;
     lastNormPosRef.current = null;
   };
 
+  // Determine cursor style based on tool
+  const getCursor = () => {
+    if (!canDraw) return 'default';
+    if (tool === 'fill') return 'crosshair';
+    if (tool === 'eraser') return 'cell';
+    return 'crosshair';
+  };
+
+  // Determine if the opposing team should see a waiting overlay (Phase 1)
+  const showTeamWaitingOverlay = teamMode && gameState === 'DRAWING' &&
+    currentPhase === 1 && !isDrawer && myTeam !== drawerTeam && myTeam != null;
+
+  // During Phase 2 in team mode, the canvas is visible to all (readonly for drawing team)
+  const showPhase2Banner = teamMode && gameState === 'TEAM_PHASE2';
+
   return (
-    <div 
-      style={{ 
-        position: 'relative', 
-        width: '100%', 
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
         paddingTop: '66.66%', // 3:2 aspect ratio
         background: '#ffffff',
         borderRadius: 'var(--radius-lg)',
@@ -112,20 +180,19 @@ export default function Canvas({
     >
       <canvas
         ref={canvasRef}
-        onMouseDown={handlePointerDown}
-        onMouseMove={handlePointerMove}
-        onMouseUp={handlePointerUp}
-        onMouseLeave={handlePointerUp}
-        onTouchStart={handlePointerDown}
-        onTouchMove={handlePointerMove}
-        onTouchEnd={handlePointerUp}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+        onPointerCancel={handlePointerUp}
         style={{
           position: 'absolute',
           top: 0,
           left: 0,
           width: '100%',
           height: '100%',
-          cursor: isDrawer && gameState === 'DRAWING' ? (tool === 'eraser' ? 'cell' : 'crosshair') : 'default'
+          cursor: getCursor(),
+          touchAction: 'none'
         }}
       />
 
@@ -172,6 +239,68 @@ export default function Canvas({
             Round Over!
           </h2>
           <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)' }}>Next turn starting soon...</p>
+        </div>
+      )}
+
+      {/* Team Mode Phase 1 Waiting Overlay for opposing team */}
+      {showTeamWaitingOverlay && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.92)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            zIndex: 10,
+            gap: '12px'
+          }}
+        >
+          <div style={{ fontSize: '3.5rem' }}>🙈</div>
+          <h2 style={{ fontSize: '1.6rem', color: 'var(--accent-amber)' }}>
+            {drawerTeam === 'A' ? 'Team A' : 'Team B'} is drawing secretly!
+          </h2>
+          <p style={{ color: 'var(--text-muted)', textAlign: 'center', maxWidth: '280px' }}>
+            You'll get to see the drawing and guess in <strong style={{ color: 'white' }}>Phase 2</strong>.
+          </p>
+          <div
+            style={{
+              marginTop: '8px',
+              padding: '8px 20px',
+              borderRadius: 'var(--radius-md)',
+              background: 'rgba(99,102,241,0.2)',
+              border: '1px solid var(--accent-indigo)',
+              fontSize: '0.9rem',
+              color: 'var(--accent-indigo)',
+              fontWeight: 600
+            }}
+          >
+            ⏳ Phase 1 in progress...
+          </div>
+        </div>
+      )}
+
+      {/* Team Phase 2 Banner */}
+      {showPhase2Banner && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            padding: '8px',
+            background: 'linear-gradient(135deg, rgba(16,185,129,0.9), rgba(5,150,105,0.9))',
+            textAlign: 'center',
+            color: 'white',
+            fontWeight: 700,
+            fontSize: '0.95rem',
+            zIndex: 5
+          }}
+        >
+          🔍 Phase 2 — Guess the drawing!
         </div>
       )}
     </div>

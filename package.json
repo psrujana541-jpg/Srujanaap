@@ -8,6 +8,7 @@
     "server": "npm start --prefix server",
     "server:dev": "npm run dev --prefix server",
     "client": "npm run dev --prefix client",
+    "build": "npm run build --prefix client",
     "dev": "concurrently \"npm run server:dev\" \"npm run client\""
   },
   "devDependencies": {

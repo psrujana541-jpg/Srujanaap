@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
 :root {
   --bg-gradient: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #0f172a 60%, #020617 100%);
   --accent-purple: #8b5cf6;
@@ -103,6 +105,7 @@ button:active {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  min-height: 44px;
 }
 .btn-primary:hover {
   background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
@@ -122,6 +125,7 @@ button:active {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  min-height: 44px;
 }
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.15);
@@ -133,6 +137,7 @@ button:active {
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   color: white;
   box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+  min-height: 44px;
 }
 .btn-amber:hover {
   background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
@@ -144,6 +149,14 @@ button:active {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
 }
 .btn-emerald:hover {
   background: linear-gradient(135deg, #059669 0%, #047857 100%);
@@ -151,7 +164,7 @@ button:active {
   box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
 }
 
-/* Form Input Styling */
+/* Form Input Styling — font-size ≥ 16px prevents iOS Safari zoom */
 .input-field {
   width: 100%;
   background: rgba(15, 23, 42, 0.6);
@@ -160,7 +173,7 @@ button:active {
   padding: 12px 16px;
   color: white;
   font-family: var(--font-body);
-  font-size: 1rem;
+  font-size: 1rem; /* 16px — prevents iOS auto-zoom */
   transition: all 0.2s ease;
 }
 .input-field:focus {
@@ -171,6 +184,109 @@ button:active {
 }
 .input-field::placeholder {
   color: var(--text-dim);
+}
+
+/* Toolbar touch-friendly styles */
+.tool-btn {
+  padding: 10px 14px !important;
+  font-size: 0.85rem !important;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.color-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  min-width: 26px;
+  min-height: 26px;
+  cursor: pointer;
+}
+
+.color-picker-input {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  background: transparent;
+  padding: 0;
+  min-width: 32px;
+  min-height: 32px;
+}
+
+/* ============================================================
+   RESPONSIVE GAME LAYOUT
+   ============================================================ */
+
+/* 3-column desktop layout */
+.game-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 260px 1fr 300px;
+  gap: 16px;
+  align-items: start;
+}
+
+/* Game header responsive */
+.game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.game-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.game-header-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.game-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Mobile tab bar for switching between Canvas/Chat/Players panels */
+.mobile-tab-bar {
+  display: none;
+}
+
+.unread-badge {
+  position: absolute;
+  top: -4px;
+  right: 12px;
+  background: var(--accent-pink);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(236, 72, 153, 0.6);
+}
+
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  height: 620px;
+}
+
+/* Toggle visibility on mobile */
+.mobile-hidden {
+  display: flex;
 }
 
 /* Animations */
@@ -189,6 +305,11 @@ button:active {
   50% { transform: translateY(-8px); }
 }
 
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -199,4 +320,202 @@ button:active {
 
 .animate-float {
   animation: float 4s ease-in-out infinite;
+}
+
+.animate-pulse {
+  animation: pulse 1s ease-in-out infinite;
+}
+
+/* ============================================================
+   TABLET (769px – 1024px)
+   ============================================================ */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .game-layout {
+    grid-template-columns: 220px 1fr 260px;
+    gap: 12px;
+  }
+
+  .chat-panel {
+    height: 540px;
+  }
+}
+
+/* ============================================================
+   MOBILE / PORTRAIT TABLET (≤ 768px)
+   ============================================================ */
+@media (max-width: 768px) {
+  .game-container {
+    padding: 8px 10px !important;
+  }
+
+  .game-layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* Mobile tab bar to switch between Canvas, Chat, and Players */
+  .mobile-tab-bar {
+    display: flex;
+    gap: 4px;
+    border-radius: var(--radius-md);
+    padding: 4px;
+    margin-bottom: 12px;
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(12px);
+  }
+
+  .mobile-tab-bar button {
+    flex: 1;
+    padding: 10px 6px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    min-height: 44px;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+  }
+
+  .mobile-tab-bar button.active {
+    background: var(--accent-indigo);
+    color: white;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  }
+
+  .mobile-tab-bar button:not(.active) {
+    background: transparent;
+    color: var(--text-muted);
+  }
+
+  .chat-panel {
+    height: 480px;
+  }
+
+  .players-panel {
+    max-height: 480px;
+  }
+
+  /* Hide panels not active in mobile tab view */
+  .mobile-hidden {
+    display: none !important;
+  }
+
+  .hide-mobile {
+    display: none;
+  }
+
+  /* Toolbar: allow wrapping and bigger touch targets on mobile */
+  .toolbar {
+    gap: 8px !important;
+    padding: 10px 12px !important;
+    justify-content: center !important;
+  }
+
+  .color-swatch {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  .color-palette {
+    max-width: 100% !important;
+    justify-content: center;
+  }
+
+  /* Header adjustments for mobile */
+  .game-header {
+    padding: 8px 12px;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .game-header-center {
+    order: 3;
+    width: 100%;
+    flex: unset;
+  }
+
+  .game-header-right {
+    gap: 8px;
+  }
+}
+
+/* ============================================================
+   SMALL PHONE (≤ 480px)
+   ============================================================ */
+@media (max-width: 480px) {
+  body {
+    font-size: 14px;
+  }
+
+  .game-layout {
+    padding: 0;
+  }
+
+  /* Reduce settings grid to single column on small phones */
+  .settings-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .chat-panel {
+    height: 400px;
+  }
+
+  .game-header {
+    padding: 6px 10px;
+  }
+
+  /* Hide text labels in toolbar buttons on small screens */
+  .tool-label {
+    display: none;
+  }
+
+  .tool-btn {
+    padding: 10px !important;
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Team mode color coding */
+.team-a-badge {
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  color: #93c5fd;
+}
+
+.team-b-badge {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+.player-team-a {
+  border-left: 3px solid #3b82f6 !important;
+}
+
+.player-team-b {
+  border-left: 3px solid #ef4444 !important;
+}
+
+.team-score-header-a {
+  background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(37,99,235,0.1));
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #93c5fd;
+}
+
+.team-score-header-b {
+  background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(220,38,38,0.1));
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #fca5a5;
 }
