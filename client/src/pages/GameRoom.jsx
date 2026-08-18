@@ -34,6 +34,8 @@ export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
   // Drawer specific state
   const [wordChoices, setWordChoices] = useState([]);
   const [myDrawerWord, setMyDrawerWord] = useState('');
+  const [lastRevealedWord, setLastRevealedWord] = useState('');
+  const [roundEndReason, setRoundEndReason] = useState('');
   
   // Timer state
   const [timeLeft, setTimeLeft] = useState(initialRoom.timeLeft || 0);
@@ -108,8 +110,17 @@ export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
   // Listen to round start
   useSocket(EVENTS.ROUND_START, () => {
     setWordChoices([]);
+    setMyDrawerWord('');
+    setLastRevealedWord('');
+    setRoundEndReason('');
     // Start music when round starts if not already playing
     bgMusicRef.current?.play().catch(() => {});
+  });
+
+  // Listen to round end
+  useSocket(EVENTS.ROUND_END, ({ word, reason }) => {
+    if (word) setLastRevealedWord(word);
+    if (reason) setRoundEndReason(reason);
   });
 
   // Listen to word selected by drawer
@@ -194,7 +205,9 @@ export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
             <WordDisplay 
               maskedWord={room.maskedWord} 
               isDrawer={isDrawer} 
-              drawerWord={myDrawerWord} 
+              drawerWord={myDrawerWord}
+              gameState={room.gameState}
+              revealedWord={lastRevealedWord}
             />
           )}
         </div>
@@ -281,6 +294,8 @@ export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
             fillCanvas={fillCanvas}
             floodFill={floodFill}
             syncHistory={syncHistory}
+            lastRevealedWord={lastRevealedWord}
+            roundEndReason={roundEndReason}
           />
 
           {/* Toolbar visible only to current drawer */}

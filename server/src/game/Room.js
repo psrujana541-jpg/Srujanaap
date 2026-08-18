@@ -262,6 +262,11 @@ class Room {
   getMaskedWord(socketId = null) {
     if (!this.currentWord) return '';
     
+    // Reveal full word at round end or game end
+    if (this.gameState === GAME_STATES.ROUND_END || this.gameState === GAME_STATES.GAME_END) {
+      return this.currentWord;
+    }
+
     // If drawer or user who guessed correctly, return full word
     if (socketId) {
       const player = this.players.get(socketId);
@@ -400,6 +405,10 @@ class Room {
         reason,
         scores: this.getScoreboard()
       });
+
+      if (revealedWord) {
+        this.broadcastSystemMessage(`The word was: "${revealedWord.toUpperCase()}"`);
+      }
     }
 
     this.broadcastRoomUpdate();

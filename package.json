@@ -9,9 +9,13 @@
     "server:dev": "npm run dev --prefix server",
     "client": "npm run dev --prefix client",
     "build": "npm run build --prefix client",
-    "dev": "concurrently \"npm run server:dev\" \"npm run client\""
+    "dev": "concurrently \"npm run server:dev\" \"npm run client\"",
+    "test:e2e": "npx playwright test",
+    "test:e2e:headed": "npx playwright test --headed",
+    "test:e2e:report": "npx playwright show-report"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "concurrently": "^8.2.2"
   }
 }

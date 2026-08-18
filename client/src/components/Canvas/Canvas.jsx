@@ -17,6 +17,8 @@ export default function Canvas({
   clearCanvas,
   floodFill,
   syncHistory,
+  lastRevealedWord,
+  roundEndReason,
   // Team mode props
   teamMode,
   myTeam,
@@ -225,20 +227,32 @@ export default function Canvas({
           style={{
             position: 'absolute',
             inset: 0,
-            background: 'rgba(15, 23, 42, 0.85)',
+            background: 'rgba(15, 23, 42, 0.88)',
             backdropFilter: 'blur(8px)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             color: 'white',
-            zIndex: 10
+            zIndex: 10,
+            padding: '20px',
+            textAlign: 'center'
           }}
         >
-          <h2 style={{ fontSize: '2.2rem', color: 'var(--accent-emerald)', marginBottom: '12px' }}>
-            Round Over!
+          <h2 style={{ fontSize: '2rem', color: 'var(--accent-emerald)', marginBottom: '8px' }}>
+            {roundEndReason || 'Round Over!'}
           </h2>
-          <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)' }}>Next turn starting soon...</p>
+          {lastRevealedWord && (
+            <div style={{ margin: '14px 0', padding: '12px 24px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-md)', border: '1px solid var(--card-border)' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
+                The word was
+              </span>
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-amber)', letterSpacing: '3px', marginTop: '4px' }}>
+                {lastRevealedWord.toUpperCase()}
+              </div>
+            </div>
+          )}
+          <p style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>Next turn starting soon...</p>
         </div>
       )}
 
