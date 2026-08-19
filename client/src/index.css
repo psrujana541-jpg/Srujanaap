@@ -349,54 +349,44 @@ button:active {
   }
 
   .game-layout {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 12px;
   }
 
-  /* Mobile tab bar to switch between Canvas, Chat, and Players */
-  .mobile-tab-bar {
-    display: flex;
-    gap: 4px;
-    border-radius: var(--radius-md);
-    padding: 4px;
-    margin-bottom: 12px;
-    background: rgba(15, 23, 42, 0.75);
-    border: 1px solid var(--card-border);
-    backdrop-filter: blur(12px);
+  /* 1. Whiteboard panel at top */
+  .canvas-panel {
+    order: 1;
+    width: 100%;
+    display: flex !important;
+    flex-direction: column;
   }
 
-  .mobile-tab-bar button {
-    flex: 1;
-    padding: 10px 6px;
-    font-size: 0.9rem;
-    font-weight: 700;
-    min-height: 44px;
-    border-radius: var(--radius-sm);
-    transition: all 0.2s ease;
-  }
-
-  .mobile-tab-bar button.active {
-    background: var(--accent-indigo);
-    color: white;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
-  }
-
-  .mobile-tab-bar button:not(.active) {
-    background: transparent;
-    color: var(--text-muted);
-  }
-
+  /* 2. Chat & typing input directly below whiteboard */
   .chat-panel {
-    height: 480px;
+    order: 2;
+    width: 100%;
+    height: 320px;
+    display: flex !important;
+    flex-direction: column;
   }
 
+  /* 3. Players panel below chat */
   .players-panel {
-    max-height: 480px;
+    order: 3;
+    width: 100%;
+    max-height: 240px;
+    display: flex !important;
+    flex-direction: column;
   }
 
-  /* Hide panels not active in mobile tab view */
-  .mobile-hidden {
+  /* Hide tab bar — canvas & chat stay together on phone screen */
+  .mobile-tab-bar {
     display: none !important;
+  }
+
+  .mobile-hidden {
+    display: flex !important;
   }
 
   .hide-mobile {
@@ -450,6 +440,7 @@ button:active {
 
   .game-layout {
     padding: 0;
+    gap: 10px;
   }
 
   /* Reduce settings grid to single column on small phones */
@@ -458,7 +449,11 @@ button:active {
   }
 
   .chat-panel {
-    height: 400px;
+    height: 280px;
+  }
+
+  .players-panel {
+    max-height: 200px;
   }
 
   .game-header {

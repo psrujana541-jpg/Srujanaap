@@ -170,6 +170,25 @@ export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
 
   const currentDrawerObj = room.players.find(p => p.id === room.drawerId);
 
+  const handleUndo = () => {
+    socket.emit(EVENTS.UNDO_STROKE);
+  };
+
+  // Keyboard shortcut Ctrl+Z / Cmd+Z for undo when drawing
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        if (isDrawer && room.gameState === 'DRAWING' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          handleUndo();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDrawer, room.gameState]);
+
   // Cleanup music on component unmount
   useEffect(() => {
     return () => {
@@ -310,6 +329,7 @@ export default function GameRoom({ initialRoom, initialPlayer, onLeave }) {
               clearCanvas();
               socket.emit(EVENTS.CLEAR_CANVAS);
             }}
+            onUndo={handleUndo}
             disabled={!isDrawer || room.gameState !== 'DRAWING'}
           />
         </div>

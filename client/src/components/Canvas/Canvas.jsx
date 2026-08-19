@@ -27,6 +27,7 @@ export default function Canvas({
 }) {
   const isPointerDownRef = useRef(false);
   const lastNormPosRef = useRef(null);
+  const currentStrokeIdRef = useRef(null);
 
   // Initialize white canvas background & sync resize
   useEffect(() => {
@@ -115,6 +116,7 @@ export default function Canvas({
       // Broadcast fill action to server
       socket.emit(EVENTS.FILL_CANVAS, { x: normPos.x, y: normPos.y, color });
     } else {
+      currentStrokeIdRef.current = 's_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
       lastNormPosRef.current = normPos;
     }
   };
@@ -131,6 +133,7 @@ export default function Canvas({
 
     const strokeData = {
       type: 'stroke',
+      strokeId: currentStrokeIdRef.current,
       from: lastNormPosRef.current,
       to: currentNormPos,
       color,
@@ -150,6 +153,7 @@ export default function Canvas({
   const handlePointerUp = (e) => {
     isPointerDownRef.current = false;
     lastNormPosRef.current = null;
+    currentStrokeIdRef.current = null;
   };
 
   // Determine cursor style based on tool

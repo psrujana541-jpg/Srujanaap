@@ -393,6 +393,31 @@ class Room {
     this.canvasHistory = [];
   }
 
+  undoStroke() {
+    if (this.gameState !== GAME_STATES.DRAWING || this.canvasHistory.length === 0) {
+      return this.canvasHistory;
+    }
+
+    const lastItem = this.canvasHistory[this.canvasHistory.length - 1];
+    if (!lastItem) return this.canvasHistory;
+
+    if (lastItem.type === 'fill' || !lastItem.strokeId) {
+      // Pop single action (fill or untagged stroke segment)
+      this.canvasHistory.pop();
+    } else {
+      // Pop all trailing stroke segments belonging to the same stroke gesture
+      const targetStrokeId = lastItem.strokeId;
+      while (
+        this.canvasHistory.length > 0 &&
+        this.canvasHistory[this.canvasHistory.length - 1].strokeId === targetStrokeId
+      ) {
+        this.canvasHistory.pop();
+      }
+    }
+
+    return this.canvasHistory;
+  }
+
   endRound(reason = '') {
     this.clearTimer();
     this.gameState = GAME_STATES.ROUND_END;

@@ -65,4 +65,26 @@ module.exports = function registerDrawEvents(io, socket) {
       io.to(room.code).emit(EVENTS.FILL_CANVAS, fillData);
     }
   });
+
+  socket.on(EVENTS.UNDO_STROKE, () => {
+    const room = gameManager.getRoomByPlayerId(socket.id);
+    if (!room || room.drawerId !== socket.id) return;
+    if (room.teamMode && room.currentPhase === 2) return;
+
+    const updatedHistory = room.undoStroke();
+    if (updatedHistory) {
+      if (room.teamMode && room.currentPhase === 1) {
+        const drawerPlayer = room.players.get(socket.id);
+        if (!drawerPlayer) return;
+        const drawerTeam = drawerPlayer.team;
+        room.players.forEach((player) => {
+          if (player.team === drawerTeam) {
+            io.to(player.id).emit(EVENTS.CANVAS_SYNC, updatedHistory);
+          }
+        });
+      } else {
+        io.to(room.code).emit(EVENTS.CANVAS_SYNC, updatedHistory);
+      }
+    }
+  });
 };

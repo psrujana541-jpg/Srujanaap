@@ -29,7 +29,7 @@ export default function ChatInput({ onSendMessage, disabled, placeholder }) {
         disabled={disabled}
         placeholder={disabled ? (placeholder || 'Drawing or already guessed...') : 'Type your guess here...'}
         className="input-field"
-        style={{ flex: 1, padding: '8px 14px', fontSize: '0.9rem' }}
+        style={{ flex: 1, padding: '10px 14px', fontSize: '1rem' }}
       />
       <button
         type="submit"

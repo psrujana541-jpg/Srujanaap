@@ -1,5 +1,5 @@
 import React from 'react';
-import { Paintbrush, Eraser, PaintBucket, Trash2 } from 'lucide-react';
+import { Paintbrush, Eraser, PaintBucket, Trash2, Undo2 } from 'lucide-react';
 
 const PRESET_COLORS = [
   '#000000', '#ffffff', '#64748b', '#ef4444', 
@@ -23,6 +23,7 @@ export default function Toolbar({
   tool,
   setTool,
   onClear,
+  onUndo,
   disabled
 }) {
   if (disabled) return null;
@@ -143,6 +144,17 @@ export default function Toolbar({
 
       {/* Action Buttons */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <button
+          type="button"
+          id="btn-undo"
+          onClick={onUndo}
+          className="btn-secondary tool-btn"
+          title="Undo last action (Ctrl+Z)"
+          aria-label="Undo"
+        >
+          <Undo2 size={16} />
+          <span className="tool-label">Undo</span>
+        </button>
         <button
           type="button"
           id="btn-clear"
